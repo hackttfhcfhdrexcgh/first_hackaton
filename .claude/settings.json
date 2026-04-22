@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/work/python/**)"
+    ],
+    "additionalDirectories": [
+      "d:\\work\\python\\Final_try\\backend"
+    ]
+  }
+}
