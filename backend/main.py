@@ -8,7 +8,7 @@ from routers.game import router as game_router
 from routers.auth import router as auth_router
 from routers.pending import router as pending_router
 
-app = FastAPI(title="Fog of War — MTBank")
+app = FastAPI(title="Travel-mode")
 
 app.add_middleware(
     CORSMiddleware,

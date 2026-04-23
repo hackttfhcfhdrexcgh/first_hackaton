@@ -101,7 +101,7 @@ export default function Onboarding({ onReady }) {
       <div style={wrapStyle}>
         <div style={cardStyle}>
           <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>
-            Fog of War · MTBank
+            Travel-mode
           </div>
           <div style={{ fontSize: 13, color: "#888", marginBottom: 18 }}>
             Минск как игровая карта
@@ -132,7 +132,7 @@ export default function Onboarding({ onReady }) {
     <div style={wrapStyle}>
       <div style={cardStyle}>
         <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
-          Fog of War · MTBank
+          Travel-mode
         </div>
         <div style={{ fontSize: 12, color: "#888", marginBottom: 18 }}>
           Открывай территории Минска покупками у партнёров
