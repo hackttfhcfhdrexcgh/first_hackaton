@@ -5,6 +5,10 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
+    volumes:
+      - backend_bucket:/data
+    environment:
+      - DATABASE_URL=sqlite:////data/game.db
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 5s
@@ -23,3 +27,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
+volumes:
+  backend_bucket:
