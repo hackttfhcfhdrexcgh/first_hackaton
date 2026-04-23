@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from models import SessionLocal, Partner, PlayerProgress, Achievement, Reward
+from sqlalchemy import func
+
+from models import SessionLocal, Partner, PlayerProgress, Achievement, Reward, User
 from seed_data import hex_grid_minsk
 from achievement_engine import AchievementEngine
 
@@ -275,6 +277,36 @@ def list_rewards(player_id: str, db: Session = Depends(get_db)):
         else:
             active.append(item)
     return {"active": active, "used": used, "expired": expired}
+
+
+@router.get("/leaderboard")
+def leaderboard(limit: int = 20, db: Session = Depends(get_db)):
+    """Топ игроков по числу одновременно открытых (активных) территорий."""
+    cutoff = datetime.utcnow() - HEX_TTL
+    rows = (
+        db.query(
+            PlayerProgress.player_id.label("player_id"),
+            func.count(PlayerProgress.hex_id).label("active_hexes"),
+        )
+        .filter(PlayerProgress.unlocked_at >= cutoff)
+        .group_by(PlayerProgress.player_id)
+        .order_by(func.count(PlayerProgress.hex_id).desc())
+        .limit(max(1, min(limit, 100)))
+        .all()
+    )
+    player_ids = [r.player_id for r in rows]
+    users = {u.id: u.name for u in db.query(User).filter(User.id.in_(player_ids)).all()} if player_ids else {}
+    return {
+        "leaderboard": [
+            {
+                "rank": i + 1,
+                "player_id": r.player_id,
+                "name": users.get(r.player_id, "—"),
+                "active_hexes": int(r.active_hexes),
+            }
+            for i, r in enumerate(rows)
+        ],
+    }
 
 
 @router.post("/rewards/{reward_id}/use")

@@ -112,6 +112,11 @@ export async function fetchRewards(playerId) {
   return res.data;
 }
 
+export async function fetchLeaderboard(limit = 20) {
+  const res = await api.get("/api/leaderboard", { params: { limit } });
+  return res.data;
+}
+
 export async function useReward(rewardId) {
   const res = await api.post(`/api/rewards/${rewardId}/use`);
   return res.data;

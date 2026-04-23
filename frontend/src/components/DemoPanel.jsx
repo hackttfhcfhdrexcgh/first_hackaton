@@ -1,5 +1,6 @@
 // filepath: frontend/src/components/DemoPanel.jsx
 import { useEffect, useRef, useState } from "react";
+import { fetchLeaderboard } from "../api/client";
 
 const inputStyle = {
   background: "#0d0d1a",
@@ -46,6 +47,9 @@ export default function DemoPanel({
   const [rewardsOpen, setRewardsOpen] = useState(false);
   const [rewardsTab, setRewardsTab] = useState("active");
   const [redeemedFlash, setRedeemedFlash] = useState(null);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const amountRef = useRef(null);
   const activeRewards = rewards?.active ?? [];
   const usedRewards = rewards?.used ?? [];
@@ -69,6 +73,33 @@ export default function DemoPanel({
       setRedeemedFlash((cur) => (cur && cur.id === r.id ? null : cur));
     }, 3000);
   }
+
+  useEffect(() => {
+    if (!leaderboardOpen) return;
+    let cancelled = false;
+    setLeaderboardLoading(true);
+    fetchLeaderboard(20)
+      .then((data) => {
+        if (!cancelled) setLeaderboard(data.leaderboard ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setLeaderboard([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLeaderboardLoading(false);
+      });
+    const timer = setInterval(() => {
+      fetchLeaderboard(20)
+        .then((data) => {
+          if (!cancelled) setLeaderboard(data.leaderboard ?? []);
+        })
+        .catch(() => {});
+    }, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [leaderboardOpen]);
 
   useEffect(() => {
     if (selectedPartner?.id != null && String(selectedPartner.id) !== partnerId) {
@@ -151,6 +182,23 @@ export default function DemoPanel({
               🎁 {activeRewards.length}
             </button>
           )}
+          <button
+            onClick={() => setLeaderboardOpen((v) => !v)}
+            style={{
+              background: leaderboardOpen ? "#FFD60A" : "transparent",
+              color: leaderboardOpen ? "#0d0d1a" : "#FFD60A",
+              border: "1px solid #FFD60A",
+              padding: "3px 10px",
+              borderRadius: 12,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+            title="Лидерборд — топ игроков по активным территориям"
+          >
+            🏆
+          </button>
           <span>{stats?.unlocked ?? 0}/{stats?.total ?? 0}</span>
           {onLogout && (
             <button
@@ -230,6 +278,85 @@ export default function DemoPanel({
       <div style={{ fontSize: 11, color: "#666", marginTop: 8, textAlign: "center" }}>
         После оплаты банк пришлёт уведомление — открой территорию на карте
       </div>
+
+      {leaderboardOpen && (
+        <div
+          style={{
+            marginTop: 10,
+            background: "#111125",
+            border: "1px solid #FFD60A",
+            borderRadius: 10,
+            padding: 10,
+            maxHeight: 260,
+            overflowY: "auto",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 8,
+            }}
+          >
+            <span style={{ color: "#FFD60A", fontSize: 13, fontWeight: 700 }}>
+              🏆 Лидеры по активным территориям
+            </span>
+            <span style={{ fontSize: 10, color: "#666" }}>обновляется</span>
+          </div>
+          {leaderboardLoading && leaderboard.length === 0 && (
+            <div style={{ fontSize: 12, color: "#666" }}>Загрузка…</div>
+          )}
+          {!leaderboardLoading && leaderboard.length === 0 && (
+            <div style={{ fontSize: 12, color: "#666" }}>Пока никто не открыл территории</div>
+          )}
+          {leaderboard.map((row) => {
+            const isMe = player && row.player_id === player.player_id;
+            const medal = row.rank === 1 ? "🥇" : row.rank === 2 ? "🥈" : row.rank === 3 ? "🥉" : `#${row.rank}`;
+            return (
+              <div
+                key={row.player_id}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "6px 0",
+                  borderBottom: "1px solid #1f1f33",
+                  gap: 8,
+                }}
+              >
+                <span
+                  style={{
+                    minWidth: 32,
+                    fontWeight: 700,
+                    color: row.rank <= 3 ? "#FFD60A" : "#888",
+                    fontSize: 13,
+                  }}
+                >
+                  {medal}
+                </span>
+                <span
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    color: isMe ? "#7CFFB2" : "#fff",
+                    fontSize: 13,
+                    fontWeight: isMe ? 700 : 500,
+                  }}
+                >
+                  {row.name}{isMe ? " (вы)" : ""}
+                </span>
+                <span style={{ color: "#00C4FF", fontSize: 13, fontWeight: 700 }}>
+                  {row.active_hexes}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {rewardsOpen && (
         <div
